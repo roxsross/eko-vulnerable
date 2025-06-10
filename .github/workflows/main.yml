@@ -27,7 +27,7 @@ jobs:
             - run: | 
                 mv gitleaks.sarif /tmp/gitleaks.sarif
                 cat /tmp/gitleaks.sarif
-                python ./github/workflows/scripts/remove.py /tmp/gitleaks.sarif 
+                python ./github/scripts/remove.py /tmp/gitleaks.sarif 
                 mv /tmp/gitleaks.sarif gitleaks.sarif              
             - name: upload codeql
               uses: github/codeql-action/upload-sarif@v3
