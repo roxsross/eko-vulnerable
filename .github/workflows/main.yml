@@ -1,0 +1,15 @@
+name: Eko security pipeline
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    test:
+        name: test-prueba-job
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: listar directorio
+              run: ls 
