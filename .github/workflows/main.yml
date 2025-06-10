@@ -12,5 +12,5 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: scan gitleaks
-              run: docker run --rm -v $(pwd):/pwd zricethezav/gitleaks:latest detect --verbose --source="/pwd" 
+              run: docker run --rm -v $(pwd):/pwd zricethezav/gitleaks:latest detect --verbose --source="/pwd" --report-format=json --report-path=/pwd/gitleaks.json --log-level=debug  
 
