@@ -26,18 +26,16 @@ jobs:
                 python-version: '3.13' 
             - run: | 
                 mv gitleaks.sarif /tmp/gitleaks.sarif
-                cat /tmp/gitleaks.sarif
                 python ./github/scripts/remove.py /tmp/gitleaks.sarif 
                 mv /tmp/gitleaks.sarif gitleaks.sarif              
             - name: upload codeql
               uses: github/codeql-action/upload-sarif@v3
               with:
-                sarif_file: gitleaks.sarif
+                sarif_file: gitleaks.sarif   
                 category: gitleaks
               continue-on-error: true 
     trivy:
         name: trivy scan
-        needs: secret
         runs-on: ubuntu-latest
         steps:
         - name: Checkout code
