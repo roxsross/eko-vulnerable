@@ -1,0 +1,39 @@
+[extend]
+useDefault = true
+
+title = "Gitleaks Custom Config"
+
+[[rules]]
+description = "AWS Access Key"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+
+[[rules]]
+description = "AWS Secret Key"
+regex = '''(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z\/+]{40}['\"]'''
+
+[[rules]]
+description = "Private Key"
+regex = '''-----BEGIN ((RSA|EC|DSA|OPENSSH) )?PRIVATE KEY-----'''
+
+[[rules]]
+description = "Google API key"
+regex = '''AIza[0-9A-Za-z\-_]{35}'''
+
+[[rules]]
+description = "Slack Token"
+regex = '''xox[pboa]\-[0-9]{12}\-[0-9]{12}\-[0-9]{12}\-[a-z0-9]{32}'''
+[[rules]]
+description = "GitHub Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+description = "Heroku API Key"
+regex = '''[hH]eroku[a-zA-Z0-9]{25,}'''
+
+[[rules]]
+description = "Generic API Key"
+regex = '''(?i)api[_-]?key['\"][a-zA-Z0-9]{32,45}['\"]'''
+
+[[rules]]
+description = "Generic Secret"
+regex = '''(?i)secret['\"][a-zA-Z0-9]{32,45}['\"]'''
