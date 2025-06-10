@@ -26,6 +26,7 @@ jobs:
                 python-version: '3.13' 
             - run: | 
                 mv gitleaks.sarif /tmp/gitleaks.sarif
+                cat ./github/scripts/remove.py
                 python ./github/scripts/remove.py /tmp/gitleaks.sarif 
                 mv /tmp/gitleaks.sarif gitleaks.sarif              
             - name: upload codeql
