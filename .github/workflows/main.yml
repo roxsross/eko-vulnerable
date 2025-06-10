@@ -6,10 +6,11 @@ on:
             - master
 
 jobs:
-    test:
-        name: test-prueba-job
+    secret:
+        name: secret-gitleaks-scan
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - name: listar directorio
-              run: ls 
+            - name: scan gitleaks
+              run: docker run --rm -v $(pwd):/pwd zricethezav/gitleaks:latest detect --verbose --source="/pwd" 
+
