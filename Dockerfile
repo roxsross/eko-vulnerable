@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:22-alpine
 
 LABEL org.opencontainers.image.description="vulnerable-node" \
       org.opencontainers.image.authors="RoxsRoss" 
