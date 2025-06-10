@@ -24,7 +24,10 @@ jobs:
             - uses: actions/setup-python@v5
               with:
                 python-version: '3.13' 
-            - run: python ./github/workflows/scripts/remove.py              
+            - run: | 
+                mv gitleaks.sarif /tmp/gitleaks.sarif
+                python ./github/workflows/scripts/remove.py /tmp/gitleaks.sarif 
+                mv /tmp/gitleaks.sarif gitleaks.sarif              
             - name: upload codeql
               uses: github/codeql-action/upload-sarif@v3
               with:
