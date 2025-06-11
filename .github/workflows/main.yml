@@ -52,9 +52,7 @@ jobs:
           python-version: '3.13'            
       - name: Remove duplicate rules from SARIF
         run: | 
-          mv gitleaks-result.sarif /tmp/gitleaks-result.sarif
-          python .github/scripts/remove.py /tmp/gitleaks-result.sarif 
-          mv /tmp/gitleaks-result.sarif gitleaks-result.sarif   
+          python .github/scripts/remove.py gitleaks-result.sarif
       - name: Upload Gitleaks Results
         uses: github/codeql-action/upload-sarif@v3
         with:
