@@ -1,77 +1,130 @@
-name: Eko security pipeline
+name: eko-pipeline-security-tab
 
 on:
-    push:
-        branches:
-            - master
+  push:
+    branches:
+      - master
 
 permissions:
-    security-events: write
-    actions: read
-    contents: read
-    checks: write
-    pull-requests: write
+  security-events: write
+  actions: read
+  contents: read
+  checks: write
+  pull-requests: write
 
 jobs:
-    secret:
-        name: secret-gitleaks-scan
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - name: scan gitleaks
-              run: docker run --rm -v $(pwd):/pwd zricethezav/gitleaks:latest detect --verbose --source="/pwd" --report-format=sarif --report-path=/pwd/gitleaks.sarif --log-level=debug 
-              continue-on-error: true 
-            - uses: actions/setup-python@v5
-              with:
-                python-version: '3.13' 
-            - run: | 
-                mv gitleaks.sarif /tmp/gitleaks.sarif
-                python .github/scripts/remove.py /tmp/gitleaks.sarif
-                mv /tmp/gitleaks.sarif gitleaks.sarif              
-            - name: upload codeql
-              uses: github/codeql-action/upload-sarif@v3
-              with:
-                sarif_file: gitleaks.sarif   
-                category: gitleaks
-              continue-on-error: true 
-    trivy:
-        name: trivy scan
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
-        - name: Build an image from Dockerfile
-          run: docker build -t docker.io/roxsross12/my-app:${{ github.sha }} .
-        - name: Run Trivy vulnerability scanner
-          uses: aquasecurity/trivy-action@0.28.0
-          with:
-            image-ref: 'docker.io/roxsross12/my-app:${{ github.sha }}'
-            exit-code: '1'
-            ignore-unfixed: true
-            format: 'sarif'
-            output: 'trivy-results.sarif'
-            vuln-type: 'os,library'
-            severity: 'CRITICAL,HIGH'
-          continue-on-error: true 
-        - name: upload codeql
-          uses: github/codeql-action/upload-sarif@v3
-          with:
-            sarif_file: trivy-results.sarif 
-            category: trivy
+  init:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
 
-    security:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@master
-        - name: Run Snyk to check for vulnerabilities
-          uses: snyk/actions/node@master
-          env:
-            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          with:
-            args: --severity-threshold=high --sarif-file-output=snyk-results.sarif
-          continue-on-error: true    
-        - name: upload codeql
-          uses: github/codeql-action/upload-sarif@v3
-          with:
-            sarif_file: snyk-results.sarif
-            category: snyk
+  secrets:
+    name: Secrets Security Scan
+    runs-on: ubuntu-latest
+    needs: [init]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Scan with Gitleaks
+        run: |
+          docker run --rm \
+            -v "$(pwd):/pwd" \
+            zricethezav/gitleaks:latest \
+            detect \
+            --verbose \
+            --source="/pwd" \
+            --report-format=sarif \
+            --report-path=/pwd/gitleaks-result.sarif \
+            --log-level=debug \
+            --config=/pwd/.gitleaks.toml
+        continue-on-error: true
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'            
+      - name: Remove duplicate rules from SARIF
+        run: | 
+          mv gitleaks-result.sarif /tmp/gitleaks-result.sarif
+          python .github/scripts/remove.py /tmp/gitleaks-result.sarif 
+          mv /tmp/gitleaks-result.sarif gitleaks-result.sarif   
+      - name: Upload Gitleaks Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks-result.sarif
+          category: gitleaks       
+  sca:
+    runs-on: ubuntu-latest
+    name: Sca Security Scan
+    needs: [init]
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v4     
+      - name: Snyk SCA Analysis
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk-results.sarif
+        continue-on-error: true
+
+      - name: Upload Snyk results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-results.sarif
+          category: snyk          
+
+  sast:
+    runs-on: ubuntu-latest
+    name: Sast Security Scan
+    container:
+      image: returntocorp/semgrep
+    needs: [init]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: full scan
+        run: |
+          semgrep \
+          --sarif --output report.sarif \
+          --metrics=off \
+          --config="p/javascript"
+      
+      - name: Upload Snyk results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: report.sarif
+          category: semgrep               
+  container-scan:
+    runs-on: ubuntu-latest
+    name: Container Security Scan
+    needs: init
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t app-image:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
+        with:
+          image-ref: 'app-image:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: trivy
