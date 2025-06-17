@@ -110,3 +110,25 @@ jobs:
         with:
           name: trivy-json-results
           path: trivy-results.json
+
+  upload_dojo:
+    needs: [secrets, sca, sast, container-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      - name: install python dependencies
+        run: |
+          pip install requests
+      - name: download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./scan-results
+      - name: list downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find ./scan-results -type f -name "*.json" -o -name "*.xml"

@@ -112,7 +112,7 @@ def main():
         sys.exit(1)
     
     defectdojo_url = os.environ.get('DEFECTDOJO_URL', 'https://demo.defectdojo.org')
-    engagement_id = os.environ.get('DEFECTDOJO_ENGAGEMENT_ID', '15')
+    engagement_id = os.environ.get('DEFECTDOJO_ENGAGEMENT_ID', '23')
     
     print(f'🔄 DefectDojo Upload Configuration:')
     print(f'   URL: {defectdojo_url}')
