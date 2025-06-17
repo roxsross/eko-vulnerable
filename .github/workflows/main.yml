@@ -5,13 +5,6 @@ on:
     branches:
       - master
 
-permissions:
-  security-events: write
-  actions: read
-  contents: read
-  checks: write
-  pull-requests: write
-
 jobs:
   init:
     name: Install Dependencies
@@ -41,23 +34,16 @@ jobs:
             detect \
             --verbose \
             --source="/pwd" \
-            --report-format=sarif \
-            --report-path=/pwd/gitleaks-result.sarif \
+            --report-format=json \
+            --report-path=/pwd/gitleaks-result.json \
             --log-level=debug \
             --config=/pwd/.gitleaks.toml
         continue-on-error: true
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name : Upload Gitleaks report
+        uses: actions/upload-artifact@v4
         with:
-          python-version: '3.13'            
-      - name: Remove duplicate rules from SARIF
-        run: | 
-          python .github/scripts/remove.py gitleaks-result.sarif
-      - name: Upload Gitleaks Results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: gitleaks-result.sarif
-          category: gitleaks       
+          name: gitleaks-json-reports
+          path: gitleaks-result.json
   sca:
     runs-on: ubuntu-latest
     name: Sca Security Scan
@@ -70,14 +56,13 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --sarif-file-output=snyk-results.sarif
+          args: --severity-threshold=high --json-file-output=snyk-results.json
         continue-on-error: true
-
       - name: Upload Snyk results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: snyk-results.sarif
-          category: snyk          
+          name: snyk-json-reports
+          path: snyk-results.json
 
   sast:
     runs-on: ubuntu-latest
@@ -91,15 +76,15 @@ jobs:
       - name: full scan
         run: |
           semgrep \
-          --sarif --output report.sarif \
+          --json --output report.json \
           --metrics=off \
           --config="p/javascript"
-      
-      - name: Upload Snyk results
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload Semgrep results
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: report.sarif
-          category: semgrep               
+          name: semgrep-json-results
+          path: report.json
+
   container-scan:
     runs-on: ubuntu-latest
     name: Container Security Scan
@@ -117,12 +102,11 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db,public.ecr.aws/aquasecurity/trivy-db
         with:
           image-ref: 'app-image:${{ github.sha }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          format: 'json'
+          output: 'trivy-results.json'
           severity: 'CRITICAL,HIGH'
-
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: 'trivy-results.sarif'
-          category: trivy
+          name: trivy-json-results
+          path: trivy-results.json
