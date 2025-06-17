@@ -2,7 +2,7 @@ version: '3.9'
 services:
   vulnerable_node:
     restart: always
-    build: .
+    image: roxsross12/eko-vulnerable
     depends_on:
       - db
     ports:
@@ -10,9 +10,11 @@ services:
 
   db:
     restart: always
-    build: ./services/postgresql
+    image: postgres:15
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./services/postgresql/ini.sql:/docker-entrypoint-initdb.d/ini.sql
