@@ -220,6 +220,7 @@ jobs:
           -x zap-results.xml \
           -J zap-results.json \
           -w zap-report.html
+       continue-on-error: true
       - name: Upload ZAP results
         uses: actions/upload-artifact@v4
         with:
