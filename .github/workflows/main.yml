@@ -114,6 +114,10 @@ jobs:
   upload_dojo:
     needs: [secrets, sca, sast, container-scan]
     runs-on: ubuntu-latest
+    env:
+      DEFECTDOJO_TOKEN: ${{ secrets.DEFECTDOJO_TOKEN }}
+      DEFECTDOJO_URL: ${{ vars.DEFECTDOJO_URL || 'https://demo.defectdojo.org' }}
+      DEFECTDOJO_ENGAGEMENT_ID: ${{ vars.DEFECTDOJO_ENGAGEMENT_ID || '23' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -132,3 +136,9 @@ jobs:
         run: |
           echo "Downloaded artifacts:"
           find ./scan-results -type f -name "*.json" -o -name "*.xml"
+      - name: Upload to OWASP Defectdojo 
+        run: |
+          python .github/scripts/eko-upload-result.py ./scan-results/gitleaks-json-reports/gitleaks-result.json
+          python .github/scripts/eko-upload-result.py ./scan-results/snyk-json-reports/snyk-results.json
+          python .github/scripts/eko-upload-result.py ./scan-results/semgrep-json-results/report.json
+          python .github/scripts/eko-upload-result.py ./scan-results/trivy-json-results/trivy-results.json
