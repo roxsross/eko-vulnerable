@@ -195,3 +195,40 @@ jobs:
             cd ec2-user
             docker-compose --version
             docker-compose up -d
+ 
+  security_dast: 
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      - name: install python dependencies
+        run: |
+          pip install requests        
+
+      - name: Run OWASP ZAP DAST scan
+        run: |
+          docker run -u root --rm \
+          -v $(pwd):/zap/wrk/:rw \
+          ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+          -t http://${{ secrets.AWS_IP_EC2 }}:3000 \
+          -x zap-results.xml \
+          -J zap-results.json \
+          -w zap-report.html
+      - name: Upload ZAP results
+        uses: actions/upload-artifact@v4
+        with:
+            name: zap-scan-results
+            path: |
+              zap-results.xml
+              zap-results.json
+              zap-report.html
+            retention-days: 7
+      - name: Upload to OWASP Defectdojo 
+        run: |
+          python .github/scripts/eko-upload-result.py zap-results.xml
