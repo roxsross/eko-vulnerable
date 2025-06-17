@@ -199,6 +199,10 @@ jobs:
   security_dast: 
     runs-on: ubuntu-latest
     needs: [deploy]
+    env:
+      DEFECTDOJO_TOKEN: ${{ secrets.DEFECTDOJO_TOKEN }}
+      DEFECTDOJO_URL: ${{ vars.DEFECTDOJO_URL || 'https://demo.defectdojo.org' }}
+      DEFECTDOJO_ENGAGEMENT_ID: ${{ vars.DEFECTDOJO_ENGAGEMENT_ID || '23' }}
     timeout-minutes: 45
     steps:
       - name: Checkout code
