@@ -237,3 +237,14 @@ jobs:
       - name: Upload to OWASP Defectdojo 
         run: |
           python .github/scripts/eko-upload-result.py zap-results.xml
+      - name: Nuclei - Vulnerability Scan
+        id: nuclei_scan
+        uses: projectdiscovery/nuclei-action@main
+        with:
+          target: http://${{ secrets.AWS_IP_EC2 }}:3000
+
+      - name: GitHub Workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuclei.log
+          path: nuclei.log
